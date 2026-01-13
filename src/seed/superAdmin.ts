@@ -20,6 +20,7 @@ export const createSuperAdmin = async () => {
       email,
       password: hashedPassword,
       role: "super-admin",
+      mustChangePassword:false,
     });
 
     console.log("✅ Super Admin created successfully");

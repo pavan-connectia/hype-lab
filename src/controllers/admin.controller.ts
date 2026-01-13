@@ -7,12 +7,12 @@ export const adminLogin = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
-    // 1️⃣ Check if email or password is empty
+    // 1️⃣ Validate input
     if (!email || !password) {
       return res.status(400).json({ message: "Please fill in all fields" });
     }
 
-    // 2️⃣ Find admin
+    // 2️⃣ Find active admin
     const admin = await Admin.findOne({ email, isActive: true });
     if (!admin) {
       return res.status(401).json({ message: "Invalid credentials" });
@@ -24,14 +24,23 @@ export const adminLogin = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // 4️⃣ Generate JWT
+    // 🔥 4️⃣ FORCE PASSWORD CHANGE CHECK
+    if (admin.mustChangePassword) {
+      return res.status(403).json({
+        message: "Password change required",
+        forceChangePassword: true,
+        adminId: admin._id,
+      });
+    }
+
+    // 5️⃣ Generate JWT (only if password is final)
     const token = jwt.sign(
       { id: admin._id, name: admin.name, role: admin.role },
       process.env.JWT_SECRET!,
       { expiresIn: "1d" }
     );
 
-    // 5️⃣ Respond with token & admin data
+    // 6️⃣ Success response
     res.json({
       token,
       admin: {

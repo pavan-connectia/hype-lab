@@ -6,6 +6,7 @@ export interface AdminDocument extends Document {
   password: string;
   role: "super-admin" | "admin";
   isActive: boolean;
+  mustChangePassword: boolean;
 }
 
 const adminSchema = new Schema<AdminDocument>(
@@ -38,6 +39,10 @@ const adminSchema = new Schema<AdminDocument>(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    mustChangePassword: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }

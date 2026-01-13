@@ -22,6 +22,7 @@ export const createAdmin = async (req: Request, res: Response) => {
       email,
       password: hashedPassword,
       role: "admin",
+      mustChangePassword: true,
     });
 
     res.status(201).json({
@@ -65,34 +66,45 @@ export const getAdminById = async (req: Request, res: Response) => {
 
 export const updateAdmin = async (req: Request, res: Response) => {
   try {
-    const { name, email, isActive } = req.body;
+    const { name, email, isActive, password } = req.body;
+
+    const updateData: any = { name, email, isActive };
+
+    // ✅ Only update password if provided
+    if (password && password.trim() !== "") {
+      const hashed = await bcrypt.hash(password, 10);
+      updateData.password = hashed;
+    }
 
     const admin = await Admin.findByIdAndUpdate(
       req.params.id,
-      { name, email, isActive },
+      updateData,
       { new: true }
     ).select("-password");
 
-    if (!admin) {
-      return res.status(404).json({ message: "Admin not found" });
-    }
+    if (!admin) return res.status(404).json({ message: "Admin not found" });
 
     res.json({
       message: "Admin updated successfully",
       admin,
     });
-  } catch {
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Failed to update admin" });
   }
 };
 
 export const deleteAdmin = async (req: Request, res: Response) => {
   try {
-    const admin = await Admin.findByIdAndUpdate(
-      req.params.id,
-      { isActive: false },
-      { new: true }
-    );
+    // for hard delete
+    const admin = await Admin.findByIdAndDelete(req.params.id);
+
+    //for soft delete , isActive=false, user not deleted parmanently
+    // const admin = await Admin.findByIdAndUpdate(
+    //   req.params.id,
+    //   { isActive: false },
+    //   { new: true }
+    // );
 
     if (!admin) {
       return res.status(404).json({ message: "Admin not found" });
